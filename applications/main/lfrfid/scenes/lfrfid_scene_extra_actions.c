@@ -32,7 +32,7 @@ void lfrfid_scene_extra_actions_on_enter(void* context) {
         app);
     submenu_add_item(
         submenu,
-        "Clear T5577 Password",
+        "Clear T5577 password",
         SubmenuIndexClearT5577,
         lfrfid_scene_extra_actions_submenu_callback,
         app);

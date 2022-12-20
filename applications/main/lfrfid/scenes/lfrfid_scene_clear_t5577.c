@@ -14,8 +14,7 @@ static void writer_initialize(T55xxTiming* t55xxtiming, T55xxCmd* t55xxcmd) {
     t55xxtiming->program = 700;
 }
 
-static void lfrfid_cli_t5577_clear_password_and_config_to_EM(Cli* cli, FuriString* args, LfRfid* app) {
-    UNUSED(cli);
+static void lfrfid_t5577_clear_password_and_config_to_EM(FuriString* args, LfRfid* app) {
     UNUSED(args);
     T55xxTiming* t55xxtiming = malloc(sizeof(T55xxTiming));
     T55xxCmd* t55xxcmd = malloc(sizeof(T55xxCmd));
@@ -46,19 +45,20 @@ static void lfrfid_cli_t5577_clear_password_and_config_to_EM(Cli* cli, FuriStrin
         0b00000000000101001000000001000000; //no pwd&aor config block
 
     writer_initialize(t55xxtiming, t55xxcmd);
-
-    popup_set_header(popup, "Removing\npassword", 90, 36, AlignCenter, AlignCenter);
+    notification_message(app->notifications, &sequence_blink_start_magenta);
+    
+    popup_set_header(popup, "I'm trying...", 60, 43, AlignLeft, AlignBottom);
     popup_set_icon(popup, 0, 3, &I_RFIDDolphinSend_97x61);
     popup_set_text(
             popup,
             curr_buf,
-            90,
-            56,
-            AlignCenter,
-            AlignCenter);
+            60,
+            55,
+            AlignLeft,
+            AlignBottom);
 
     for(uint8_t i = 0; i < default_passwords_len; i++) { 
-        snprintf(curr_buf, sizeof(curr_buf), "Pass %d of %d", i, default_passwords_len);
+        snprintf(curr_buf, sizeof(curr_buf), "pass %d of %d", i, default_passwords_len);
         view_dispatcher_switch_to_view(app->view_dispatcher, LfRfidViewPopup);
 
         FURI_CRITICAL_ENTER();
@@ -69,6 +69,7 @@ static void lfrfid_cli_t5577_clear_password_and_config_to_EM(Cli* cli, FuriStrin
         furi_delay_ms(5);
         FURI_CRITICAL_EXIT();
     }
+    notification_message(app->notifications, &sequence_blink_stop);
     popup_reset(app->popup);
     free(t55xxtiming);
     free(t55xxcmd);
@@ -77,27 +78,19 @@ static void lfrfid_cli_t5577_clear_password_and_config_to_EM(Cli* cli, FuriStrin
 void lfrfid_scene_clear_t5577_on_enter(void* context) {
     LfRfid* app = context;
     Widget* widget = app->widget;
-    Cli* cli = furi_record_open(RECORD_CLI);
     FuriString* cmd;
     cmd = furi_string_alloc();
 
-    // what is it?
-    lfrfid_cli_t5577_clear_password_and_config_to_EM(cli, cmd, app);
+    lfrfid_t5577_clear_password_and_config_to_EM(cmd, app);
+
+    widget_add_icon_element(widget, 0, 7, &I_RFIDDolphinSuccess_108x57);
 
     widget_add_string_element(
-        widget, 64, 14, AlignCenter, AlignTop, FontPrimary, "Done!");
-
-    widget_add_string_element(
-        widget,
-        64,
-        36,
-        AlignCenter,
-        AlignBottom,
-        FontSecondary,
-        "Test your T5577 now");
+        widget, 81, 20, AlignLeft, AlignBottom, FontPrimary, "Done!");
 
     widget_add_button_element(widget, GuiButtonTypeLeft, "Exit", lfrfid_widget_callback, app);
     view_dispatcher_switch_to_view(app->view_dispatcher, LfRfidViewWidget);
+    notification_message_block(app->notifications, &sequence_set_green_255);
     
     furi_string_free(cmd);
 }
@@ -118,6 +111,7 @@ bool lfrfid_scene_clear_t5577_on_event(void* context, SceneManagerEvent event) {
 
 void lfrfid_scene_clear_t5577_on_exit(void* context) {
     LfRfid* app = context;
+    notification_message_block(app->notifications, &sequence_reset_green);
     popup_reset(app->popup);
     widget_reset(app->widget);
 }
