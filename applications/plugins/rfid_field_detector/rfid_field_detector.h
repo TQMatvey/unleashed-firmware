@@ -1,9 +1,9 @@
-#include <gui/gui.h>
 #include <furi.h>
 #include <furi_hal.h>
-#include <notification/notification_messages.h>
+#include <gui/gui.h>
 #include <input/input.h>
 #include <lib/nfc/nfc_device.h>
+#include <notification/notification_messages.h>
 
 typedef struct FieldDetector FieldDetector;
 
