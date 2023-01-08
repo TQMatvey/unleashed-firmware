@@ -1,6 +1,6 @@
 #include "rfid_field_detector.h"
 
-bool magic_wupa() {
+bool is_nfc() {
     uint8_t tx_data[32] = {};
     uint8_t rx_data[32] = {};
     uint16_t rx_len = 0;
@@ -14,22 +14,48 @@ bool magic_wupa() {
         sizeof(rx_data),
         &rx_len,
         FURI_HAL_NFC_LL_TXRX_FLAGS_CRC_TX_MANUAL | FURI_HAL_NFC_LL_TXRX_FLAGS_AGC_ON,
-        furi_hal_nfc_ll_ms2fc(20));
+        furi_hal_nfc_ll_ms2fc(200));
 
-    if(rx_data[0] == 0x0) return true;
+    if(rx_data[0] == 0x0) return false;
 
+    return true;
+}
+
+void rfid_start() {
+    furi_hal_rfid_tim_read(125000, 0.5);
+    furi_hal_rfid_pins_read();
+    furi_hal_rfid_tim_read_start();
+
+    // do not ground the antenna
+    furi_hal_rfid_pin_pull_release();
+}
+
+void rfid_stop() {
+    furi_hal_rfid_tim_read_stop();
+    furi_hal_rfid_tim_reset();
+    furi_hal_rfid_pins_reset();
+}
+
+bool is_rfid() {
+    rfid_start();
+    rfid_stop();
     return false;
 }
 
+
 static void render_callback(Canvas* canvas, void* context) {
     UNUSED(context);
-    //FieldDetector* field_detector = context;
-
+    
     canvas_set_font(canvas, FontPrimary);
 
-    if(!magic_wupa()) {
+    // if(!magic_wupa()) {
+    if(is_nfc())
         canvas_draw_str_aligned(canvas, 64, 32, AlignCenter, AlignCenter, "NFC detected");
-    }
+    if(is_rfid())
+        canvas_draw_str_aligned(canvas, 64, 32, AlignCenter, AlignCenter, "RFID detected");
+    else
+        canvas_draw_str_aligned(canvas, 64, 32, AlignCenter, AlignCenter, "Put on card");
+
 }
 
 static void input_callback(InputEvent* input_event, FuriMessageQueue* event_queue) {
@@ -125,11 +151,14 @@ int32_t field_detector_app(void* p) {
     FuriMessageQueue* event_queue = furi_message_queue_alloc(8, sizeof(AppEvent));
 
     field_detector->view_port = view_port_alloc();
+    
     view_port_draw_callback_set(field_detector->view_port, render_callback, NULL);
     view_port_input_callback_set(field_detector->view_port, input_callback, event_queue);
 
     field_detector->gui = furi_record_open(RECORD_GUI);
     gui_add_view_port(field_detector->gui, field_detector->view_port, GuiLayerFullscreen);
+
+    view_port_enabled_set(field_detector->view_port, true);
 
     AppEvent event;
     for(bool processing = true; processing;) {
@@ -142,8 +171,8 @@ int32_t field_detector_app(void* p) {
                     if(event.input.key == InputKeyBack) processing = false;
                 }
             }
-        }
-        view_port_update(field_detector->view_port);
+            view_port_update(field_detector->view_port);
+        }   
     }
 
     furi_message_queue_free(event_queue);
