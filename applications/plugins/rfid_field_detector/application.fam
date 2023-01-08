@@ -1,0 +1,11 @@
+App(
+    appid="field_detector",
+    name="RFID Field Detector",
+    apptype=FlipperAppType.EXTERNAL,
+    entry_point="field_detector_app",
+    cdefines=["APP_RFID_field_detector"],
+    requires=["gui"],
+    stack_size=2 * 1024,
+    order=101,
+    fap_category="Tools",
+)
