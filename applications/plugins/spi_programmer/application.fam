@@ -1,0 +1,13 @@
+App(
+    appid="spi_programmer",
+    name="SPI Programmer",
+    apptype=FlipperAppType.EXTERNAL,
+    entry_point="programmer_app",
+    requires=[
+        "storage",
+        "gui",
+    ],
+    stack_size=4 * 1024,
+    order=35,
+    fap_category="GPIO",
+)
